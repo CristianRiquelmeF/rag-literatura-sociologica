@@ -1,0 +1,26 @@
+# Entornos virtuales
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Variables de entorno y credenciales
+.env
+
+# PDFs originales: casi siempre tienen copyright.
+# El repo público sube el pipeline, no los documentos.
+data/raw/*
+!data/raw/.gitkeep
+
+# Texto procesado (se regenera desde data/raw con src/ingest.py)
+data/processed/*
+!data/processed/.gitkeep
+
+# Base vectorial generada (se reconstruye desde el código)
+chroma_db/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Sistema operativo
+.DS_Store

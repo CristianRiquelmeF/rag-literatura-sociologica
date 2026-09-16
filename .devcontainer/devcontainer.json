@@ -1,0 +1,33 @@
+{
+  "name": "SocioLit-RAG",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+
+  // Le pide a Codespaces una máquina con al menos 8 GB de RAM (la más chica
+  // del tier gratuito ya cumple esto). No es una garantía dura, pero influye
+  // en qué tamaño de máquina te ofrece por defecto al crear el codespace.
+  "hostRequirements": {
+    "memory": "8gb"
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-toolsai.jupyter"
+      ]
+    }
+  },
+
+  // Se corre una sola vez, al crear el codespace:
+  //   1. instala todo lo que pide requirements.txt
+  //   2. descarga de una vez el tokenizador de oraciones de NLTK (Fase 3),
+  //      para no tener que esperarlo la primera vez que corras chunk.py
+  //   3. crea el .env desde la plantilla si todavía no existe (-n = no
+  //      sobrescribir si ya lo creaste antes en este mismo codespace)
+  "postCreateCommand": "pip install -r requirements.txt && python -m nltk.downloader punkt_tab && cp -n .env.example .env",
+
+  // Puerto de la futura interfaz Streamlit (Fase 8) — no molesta dejarlo
+  // configurado desde ya.
+  "forwardPorts": [8501]
+}

@@ -1,0 +1,24 @@
+# --- Ingesta y procesamiento de PDFs académicos (Fase 2) ---
+pdfplumber>=0.11
+
+# --- Embeddings locales, multilingües, sin costo ni API externa (Fase 4) ---
+sentence-transformers>=3.0
+
+# --- Base de datos vectorial local (Fase 4) ---
+chromadb>=0.5
+
+# --- LLM generativo: SDK oficial y actual de Gemini (Fase 6) ---
+# (reemplaza al antiguo paquete "google-generativeai", ya descontinuado)
+google-genai>=1.0
+
+# --- Interfaz web de la demo (Fase 8) ---
+streamlit>=1.37
+
+# --- Utilidades ---
+python-dotenv>=1.0
+tqdm>=4.66
+pytest>=8.0
+
+
+# --- Separación de oraciones para el chunking (Fase 3) ---
+nltk>=3.9
