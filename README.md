@@ -40,13 +40,13 @@ Pregunta → recuperación semántica (top-k) → generación aumentada con LLM 
 ## Hoja de ruta
 
 - [x] **Fase 1** — Alcance, entorno y estructura del proyecto
-- [x] **Fase 2** — Ingesta y limpieza de PDFs académicos (probada con PDFs sintéticos; falta validar con papers reales)
-- [ ] **Fase 3** — Chunking del texto
-- [ ] **Fase 4** — Embeddings y base vectorial (Chroma)
-- [ ] **Fase 5** — Recuperación semántica
-- [ ] **Fase 6** — Generación aumentada (prompt + LLM + citas)
-- [ ] **Fase 7** — Evaluación y control de alucinaciones
-- [ ] **Fase 8** — Interfaz (Streamlit) y despliegue
+- [x] **Fase 2** — Ingesta y limpieza de PDFs académicos
+- [x] **Fase 3** — Chunking del texto
+- [x] **Fase 4** — Embeddings y base vectorial (Chroma)
+- [x] **Fase 5** — Recuperación semántica
+- [x] **Fase 6** — Generación aumentada (prompt + LLM + citas)
+- [x] **Fase 7** — Evaluación y control de alucinaciones
+- [x] **Fase 8** — Interfaz (Streamlit) y despliegue
 - [ ] **Fase 9** — Documentación final para portafolio/entrevista
 
 ## Decisiones de diseño (para poder defenderlas en una entrevista)
@@ -70,6 +70,15 @@ Pregunta → recuperación semántica (top-k) → generación aumentada con LLM 
 
 ## Instalación
 
+**Opción A — GitHub Codespaces (recomendado si tu equipo tiene poca RAM):**
+el repo incluye `.devcontainer/devcontainer.json`, que deja el entorno listo
+automáticamente (dependencias instaladas, tokenizador de NLTK descargado,
+`.env` creado desde la plantilla) al crear un Codespace desde GitHub
+("Code" → "Codespaces" → "Create codespace on main"). Después de creado,
+solo falta pegar tu clave real de Gemini en el `.env` y subir tus PDFs a
+`data/raw/` (ninguno de los dos viaja por git).
+
+**Opción B — local:**
 ```bash
 git clone <tu-repo>
 cd sociolit-rag
@@ -84,19 +93,23 @@ cp .env.example .env
 
 ```
 sociolit-rag/
+├── .devcontainer/
+│   └── devcontainer.json  # Configuración de GitHub Codespaces
 ├── data/
 │   ├── raw/          # PDFs originales (NO se sube a git — ver nota de derechos de autor)
-│   └── processed/    # Texto limpio extraído, listo para trocear
+│   └── processed/    # Texto limpio extraído y chunks.jsonl
 ├── src/
 │   ├── config.py     # Configuración central (rutas, modelos, parámetros)
 │   ├── ingest.py     # Fase 2 — extracción y limpieza de PDFs
 │   ├── chunk.py      # Fase 3 — troceo de texto
 │   ├── embed.py      # Fase 4 — embeddings y carga a Chroma
 │   ├── retrieve.py   # Fase 5 — recuperación semántica
-│   └── generate.py   # Fase 6 — prompt + LLM + citas
+│   ├── generate.py   # Fase 6 — prompt + LLM + citas (con reintentos)
+│   └── evaluate.py   # Fase 7 — evaluación automatizada
 ├── notebooks/        # Exploración y validación manual de cada fase
-├── tests/            # Preguntas de prueba y evaluación (Fase 7)
-├── app.py            # Interfaz Streamlit (Fase 8)
+├── tests/
+│   └── casos_prueba.py  # Fase 7 — preguntas de prueba y control de alucinaciones
+├── app.py            # Fase 8 — interfaz de chat en Streamlit
 ├── requirements.txt
 ├── .env.example
 └── README.md
@@ -114,20 +127,17 @@ repositorios institucionales) que sí puedas incluir o referenciar libremente.
 
 ## Estado actual
 
-Fase 1 y 2 completas. `src/ingest.py` fue probado con PDFs sintéticos que
-simulan los problemas reales de un paper académico: layout a dos columnas,
-encabezado de revista repetido en cada hoja, números de página que cambian
-por hoja, una palabra cortada por guion de fin de línea, metadata de título
-genérica ("untitled") y un PDF sin texto extraíble (simulando un escaneo).
-Los cinco casos se manejaron correctamente.
+Fases 1 a 8 completas y probadas de punta a punta con papers reales
+(desarrollo migrado a GitHub Codespaces por limitaciones de RAM local).
+El pipeline completo — ingesta, chunking, embeddings, recuperación y
+generación con citas — corre correctamente, incluyendo consultas que
+requieren sintetizar información de varios documentos distintos a la vez.
+`generate.py` reintenta automáticamente ante errores transitorios del
+servidor de Gemini (ej. alta demanda). La interfaz Streamlit (`app.py`)
+envuelve todo en un chat con historial de la sesión y fuentes citadas en
+un desplegable por respuesta.
 
-**Pendiente antes de pasar a la Fase 3**: correr `python src/ingest.py` con
-tus 5-10 papers reales (cópialos a `data/raw/` primero), abrir los `.json`
-generados en `data/processed/` y confirmar que:
-1. el texto queda en el orden de lectura correcto (no mezclado entre columnas),
-2. el título detectado por documento es razonable,
-3. no quedaron restos de encabezado/pie de página.
-
-Si algo no calza con tus PDFs reales (typesetting distinto, columnas de ancho
-muy desigual, etc.), es el momento de ajustarlo antes de construir el
-chunking sobre un texto mal extraído.
+**Pendiente**: completar `tests/casos_prueba.py` con preguntas reales
+propias (no solo los dos ejemplos de partida) y correr `python src/evaluate.py`
+para tener una batería de regresión repetible. Falta la Fase 9: documentación
+final orientada a explicar el proyecto en una entrevista.
