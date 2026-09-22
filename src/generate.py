@@ -40,6 +40,7 @@ import sys
 import time
 
 from google import genai
+from google.genai import errors as genai_errors
 from google.genai import types
 from sentence_transformers import SentenceTransformer
 
@@ -80,12 +81,16 @@ def generar_respuesta(
     pregunta: str, fragmentos: list[dict], cliente: genai.Client, intentos: int = 3, espera_inicial: float = 2.0
 ) -> str:
     """
-    Llama a Gemini con un pequeño reintento ante errores transitorios del
-    servidor (ej. "503 UNAVAILABLE... high demand"). Esto NO indica un
-    problema en tu código ni en tu clave de API — es el modelo saturado en
-    ese momento puntual, algo relativamente común en horarios de alta
-    demanda. Reintenta con espera creciente (2s, 4s, 8s...) antes de avisar
-    que realmente no se pudo obtener respuesta.
+    Llama a Gemini, mostrando siempre el error real si algo falla — la
+    versión anterior de esta función ocultaba el motivo real detrás de un
+    mensaje genérico ("Gemini no respondió"), lo que hizo imposible
+    diagnosticar un problema real de cuota (ver más abajo).
+
+    Se reintenta SOLO ante errores de servidor (ServerError, ej. 503 por
+    alta demanda) — son los únicos genuinamente transitorios. Un error de
+    cliente (ClientError: cuota agotada, clave inválida, modelo
+    inexistente) no se arregla reintentando la misma petición tres veces;
+    se informa de inmediato con el detalle real en vez de perder tiempo.
     """
     prompt = construir_prompt(pregunta, fragmentos)
     config = types.GenerateContentConfig(system_instruction=SYSTEM_INSTRUCTION, temperature=0.2)
@@ -95,17 +100,21 @@ def generar_respuesta(
         try:
             respuesta = cliente.models.generate_content(model=GEMINI_MODEL_NAME, contents=prompt, config=config)
             return respuesta.text
+        except genai_errors.ClientError as e:
+            raise RuntimeError(f"Gemini rechazó la solicitud (no es un problema transitorio): {e}") from e
         except Exception as e:
             ultimo_error = e
             if intento < intentos:
                 espera = espera_inicial * (2 ** (intento - 1))
-                print(f"  (Gemini no respondió — reintentando en {espera:.0f}s, intento {intento}/{intentos})")
+                print(
+                    f"  (Gemini falló [{type(e).__name__}: {e}] — "
+                    f"reintentando en {espera:.0f}s, intento {intento}/{intentos})"
+                )
                 time.sleep(espera)
 
     raise RuntimeError(
-        "Gemini no respondió después de varios intentos. Es casi seguro un problema "
-        "temporal de disponibilidad del modelo (no de tu código ni de tu clave) — "
-        "intenta de nuevo en uno o dos minutos."
+        f"Gemini no respondió después de {intentos} intentos. "
+        f"Último error: {type(ultimo_error).__name__}: {ultimo_error}"
     ) from ultimo_error
 
 

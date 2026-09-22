@@ -28,7 +28,7 @@ EMBEDDING_MODEL_NAME = "intfloat/multilingual-e5-base"
 
 # --- LLM generativo (Fase 6) ---
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_MODEL_NAME = "gemini-3.5-flash"
+GEMINI_MODEL_NAME = "gemini-3.5-flash-lite"
 
 # --- Parámetros de chunking (se ajustan y justifican en la Fase 3) ---
 CHUNK_SIZE = 800       # caracteres aproximados por fragmento
