@@ -10,6 +10,8 @@ Se construyó sobre un corpus de papers de sociología y ciencias sociales
 computacionales, pero **la arquitectura es agnóstica al contenido** — ver
 [¿Para qué más sirve esto?](#para-qué-más-sirve-esto).
 
+![Interfaz de usuario de SocioLit-RAG](assets/demo_interfaz.png)
+
 ## Motivación
 
 Este proyecto responde a una necesidad doble:
