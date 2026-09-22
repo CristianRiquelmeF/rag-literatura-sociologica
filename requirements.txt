@@ -22,3 +22,6 @@ pytest>=8.0
 
 # --- Separación de oraciones para el chunking (Fase 3) ---
 nltk>=3.9
+
+
+torchvision

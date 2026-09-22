@@ -37,6 +37,7 @@ Uso con una sola pregunta:
 """
 
 import sys
+import time
 
 from google import genai
 from google.genai import types
@@ -75,17 +76,37 @@ def construir_prompt(pregunta: str, fragmentos: list[dict]) -> str:
     return f"Contexto:\n{construir_contexto(fragmentos)}\n\nPregunta: {pregunta}"
 
 
-def generar_respuesta(pregunta: str, fragmentos: list[dict], cliente: genai.Client) -> str:
+def generar_respuesta(
+    pregunta: str, fragmentos: list[dict], cliente: genai.Client, intentos: int = 3, espera_inicial: float = 2.0
+) -> str:
+    """
+    Llama a Gemini con un pequeño reintento ante errores transitorios del
+    servidor (ej. "503 UNAVAILABLE... high demand"). Esto NO indica un
+    problema en tu código ni en tu clave de API — es el modelo saturado en
+    ese momento puntual, algo relativamente común en horarios de alta
+    demanda. Reintenta con espera creciente (2s, 4s, 8s...) antes de avisar
+    que realmente no se pudo obtener respuesta.
+    """
     prompt = construir_prompt(pregunta, fragmentos)
-    respuesta = cliente.models.generate_content(
-        model=GEMINI_MODEL_NAME,
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            system_instruction=SYSTEM_INSTRUCTION,
-            temperature=0.2,
-        ),
-    )
-    return respuesta.text
+    config = types.GenerateContentConfig(system_instruction=SYSTEM_INSTRUCTION, temperature=0.2)
+
+    ultimo_error: Exception | None = None
+    for intento in range(1, intentos + 1):
+        try:
+            respuesta = cliente.models.generate_content(model=GEMINI_MODEL_NAME, contents=prompt, config=config)
+            return respuesta.text
+        except Exception as e:
+            ultimo_error = e
+            if intento < intentos:
+                espera = espera_inicial * (2 ** (intento - 1))
+                print(f"  (Gemini no respondió — reintentando en {espera:.0f}s, intento {intento}/{intentos})")
+                time.sleep(espera)
+
+    raise RuntimeError(
+        "Gemini no respondió después de varios intentos. Es casi seguro un problema "
+        "temporal de disponibilidad del modelo (no de tu código ni de tu clave) — "
+        "intenta de nuevo en uno o dos minutos."
+    ) from ultimo_error
 
 
 def imprimir_fuentes(fragmentos: list[dict]) -> None:
@@ -115,7 +136,11 @@ def main():
         if not fragmentos:
             print("No se recuperó ningún fragmento del corpus.")
             return
-        respuesta = generar_respuesta(pregunta, fragmentos, cliente_gemini)
+        try:
+            respuesta = generar_respuesta(pregunta, fragmentos, cliente_gemini)
+        except RuntimeError as e:
+            print(f"\n{e}\n")
+            return
         print(f"\nPregunta: {pregunta}\n{'-' * 70}")
         print(respuesta)
         imprimir_fuentes(fragmentos)
