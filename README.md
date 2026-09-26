@@ -1,4 +1,4 @@
-# Política-RAG — Asistente conversacional para el análisis de políticas públicas
+# Política-RAG: Asistente conversacional para el análisis de políticas públicas
 
 Sistema de **Retrieval-Augmented Generation (RAG)** construido desde cero,
 sin frameworks de por medio, para consultar en lenguaje natural el proceso legislativo y el debate en torno a una política pública específica — con cada afirmación citada a la fuente exacta de donde salió. Nunca responde "de memoria": si la información no está en el corpus indexado, lo dice explícitamente en vez de inventar.
