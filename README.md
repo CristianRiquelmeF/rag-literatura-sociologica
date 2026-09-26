@@ -3,7 +3,7 @@
 Sistema de **Retrieval-Augmented Generation (RAG)** construido desde cero,
 sin frameworks de por medio, para consultar en lenguaje natural el proceso legislativo y el debate en torno a una política pública específica — con cada afirmación citada a la fuente exacta de donde salió. Nunca responde "de memoria": si la información no está en el corpus indexado, lo dice explícitamente en vez de inventar.
 
-**Corpus de demostración actual**: Marco normativo y literatura de evaluación de la Pensión Garantizada Universal (PGU) en Chile, incluyendo la Ley N° 21.419 de 2022, informes legislativos sobre la transición del Pilar Solidario y estudios de impacto socio-laboral. Pero, cabe señalar que **la arquitectura es agnóstica al contenido**, es decir, se puede modificar el contenido según la finalidad.
+**Corpus de demostración actual**: Marco normativo y literatura de evaluación de la Pensión Garantizada Universal (PGU) en Chile, incluyendo la Ley N° 21.419 de 2022, informes legislativos sobre la transición del Pilar Solidario y estudios de impacto socio-laboral. Pero, cabe señalar que **la arquitectura es agnóstica al contenido**, es decir, se puede modificar la documentación según la finalidad.
 
   ![Interfaz de usuario de politica-RAG](assets/demo-interfaz.png)
 
