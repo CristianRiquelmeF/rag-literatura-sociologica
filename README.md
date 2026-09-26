@@ -5,10 +5,10 @@ sin frameworks de por medio, para consultar en lenguaje natural el proceso legis
 
 **Corpus de demostración actual**: Marco normativo y literatura de evaluación de la Pensión Garantizada Universal (PGU) en Chile, incluyendo la Ley N° 21.419 de 2022, informes legislativos sobre la transición del Pilar Solidario y estudios de impacto socio-laboral. Pero, cabe señalar que **la arquitectura es agnóstica al contenido**, es decir, se puede modificar el contenido según la finalidad.
 
-  ![Interfaz de usuario de SocioLit-RAG](assets/demo-interfaz.png)
+  ![Interfaz de usuario de politica-RAG](assets/demo-interfaz.png)
 
 
-      ![Interfaz de usuario de SocioLit-RAG](assets/demo-interfaz2.png)
+  ![Interfaz demo politica-RAG](assets/demo-interfaz2.png)
   
 ## Motivación
  
