@@ -68,7 +68,7 @@ def main():
     embeddings = modelo.encode(
         textos_con_prefijo,
         show_progress_bar=True,
-        batch_size=32,
+        batch_size=64,
         normalize_embeddings=True,  # vectores de norma 1 -> similitud coseno directa
     )
 

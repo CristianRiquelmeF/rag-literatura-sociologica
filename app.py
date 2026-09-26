@@ -48,10 +48,10 @@ def cargar_recursos():
     return modelo, coleccion, cliente
 
 
-st.title("📚 SocioLit-RAG")
+st.title("📋 Política-RAG | Observatorio de Políticas Públicas")
 st.caption(
-    "Asistente de investigación sobre literatura sociológica. Responde "
-    "exclusivamente a partir del corpus indexado, citando la fuente de cada afirmación."
+    "Asistente conversacional para el análisis de políticas públicas. "
+    "Responde exclusivamente a partir del corpus indexado, citando las fuentes de cada afirmación."
 )
 
 if not GEMINI_API_KEY:

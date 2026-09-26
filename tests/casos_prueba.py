@@ -1,32 +1,69 @@
 """
 Casos de prueba para la Fase 7 (evaluación y control de alucinaciones).
 
-Edita la lista CASOS de abajo con preguntas reales sobre TU corpus. Hay dos
-tipos de caso:
-
-  - Pregunta que el corpus SÍ cubre: agrega "debe_mencionar" con 2-4
-    palabras o frases clave que la respuesta debería incluir si el sistema
-    recuperó y usó el contexto correcto. No hace falta que calcen palabra
-    por palabra, pero sí deben ser lo bastante específicas como para que no
-    aparezcan "por casualidad" en cualquier respuesta genérica.
-
-  - Pregunta que el corpus NO cubre: usa "fuera_de_alcance": True en vez de
-    "debe_mencionar". Esta es la prueba real de control de alucinaciones —
-    confirma que el sistema admite que no sabe, en vez de inventar una
-    respuesta con apariencia de autoridad.
-
-Los dos ejemplos de abajo son de partida, basados en preguntas que ya
-probaste a mano. Reemplázalos y agrega más — idealmente cubriendo varios
-papers distintos de tu corpus, no solo uno.
+Contiene casos de prueba sobre el corpus de políticas públicas y debate previsional:
+  - Dentro del corpus: evalúa la presencia de conceptos clave en la respuesta.
+  - Fuera de alcance: verifica que el sistema admita la falta de información en lugar de inventar.
 """
 
 CASOS = [
+    # -------------------------------------------------------------------------
+    # 1. PREGUNTAS TÉCNICAS / NORMATIVAS (Ley N° 21.419 y PGU)
+    # -------------------------------------------------------------------------
     {
-        "pregunta": "¿qué es el social listening y en qué se diferencia del rating tradicional?",
-        "debe_mencionar": ["social listening", "rating"],
+        "pregunta": "¿Qué es la Pensión Garantizada Universal (PGU) y cuáles son sus principales requisitos de acceso según la Ley N° 21.419?",
+        "fuera_de_alcance": False,
+        "debe_mencionar": [
+            "pgu",
+            "21.419",
+            "65 años",
+            "10%",
+            "residencia",
+        ],
     },
     {
-        "pregunta": "¿cuál es la receta tradicional del pastel de choclo chileno?",
+        "pregunta": "¿Quiénes tienen derecho a recibir la PGU y qué exigencia de residencia contempla la ley?",
+        "fuera_de_alcance": False,
+        "debe_mencionar": [
+            "65 años",
+            "20 años",
+            "pensión base",
+            "10% más rico",
+        ],
+    },
+    {
+        "pregunta": "¿Qué beneficios del Sistema de Pensiones Solidarias fueron reemplazados por la PGU?",
+        "fuera_de_alcance": False,
+        "debe_mencionar": [
+            "pensión básica solidaria",
+            "aporte previsional solidario",
+        ],
+    },
+    # -------------------------------------------------------------------------
+    # 2. IMPACTO Y EVALUACIÓN DE POLÍTICAS PÚBLICAS
+    # -------------------------------------------------------------------------
+    {
+        "pregunta": "¿Qué efectos o impacto ha tenido la PGU en la participación laboral y formalidad del empleo según los estudios del corpus?",
+        "fuera_de_alcance": False,
+        "debe_mencionar": [
+            "laboral",
+            "empleo",
+            "participación",
+        ],
+    },
+    # -------------------------------------------------------------------------
+    # 3. CONTROL DE ALUCINACIONES (Consultas fuera del corpus)
+    # -------------------------------------------------------------------------
+    {
+        "pregunta": "¿Cuál es la receta tradicional del pastel de choclo chileno?",
+        "fuera_de_alcance": True,
+    },
+    {
+        "pregunta": "¿Qué requisitos se exigen para obtener la visa de residencia definitiva en Chile según el Servicio Nacional de Migraciones?",
+        "fuera_de_alcance": True,
+    },
+    {
+        "pregunta": "¿Cómo funciona el algoritmo de ordenamiento Quicksort en estructuras de datos?",
         "fuera_de_alcance": True,
     },
 ]

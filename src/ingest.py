@@ -34,6 +34,7 @@ Uso:
     python src/ingest.py
 """
 
+import gc
 import json
 import logging
 import re
@@ -64,24 +65,8 @@ class DocumentoProcesado:
 
 
 def detectar_columnas(palabras: list[dict], ancho_pagina: float) -> list[list[dict]]:
-    """
-    Decide si una página está en una o dos columnas y agrupa las palabras
-    en el orden de lectura correcto.
-
-    Heurística: se construye un perfil de cobertura horizontal —para cada
-    franja vertical delgada de la página se cuenta cuántas palabras la
-    atraviesan. En un layout a dos columnas existe un corredor continuo sin
-    texto entre ambas (el "gutter"). Si se encuentra ese corredor dentro del
-    tercio central de la página, se separan las palabras en columna
-    izquierda/derecha por la posición de su centro; si no se encuentra, se
-    trata la página como una sola columna.
-
-    Nota: es una heurística de primera pasada. Si tu corpus tiene un layout
-    distinto (tres columnas, columnas de ancho muy desigual), ajusta
-    ANCHO_BIN o el tercio de búsqueda más abajo.
-    """
-    ANCHO_BIN = 5  # puntos por franja del perfil de cobertura
-    ANCHO_MINIMO_CORREDOR = 15  # puntos; corredores más angostos se ignoran
+    ANCHO_BIN = 5
+    ANCHO_MINIMO_CORREDOR = 15
 
     num_bins = int(ancho_pagina // ANCHO_BIN) + 1
     cobertura = [0] * num_bins
@@ -92,9 +77,6 @@ def detectar_columnas(palabras: list[dict], ancho_pagina: float) -> list[list[di
         for b in range(bin_inicio, min(bin_fin + 1, num_bins)):
             cobertura[b] += 1
 
-    # Buscamos el corredor solo en el tercio central: evita confundir un
-    # margen ancho de página (que también tiene cobertura cero) con el
-    # gutter real entre columnas.
     tercio_izq, tercio_der = num_bins // 3, 2 * num_bins // 3
     bins_minimos = max(int(ANCHO_MINIMO_CORREDOR // ANCHO_BIN), 1)
 
@@ -122,7 +104,6 @@ def detectar_columnas(palabras: list[dict], ancho_pagina: float) -> list[list[di
 
 
 def extraer_texto_pagina(pagina) -> str:
-    """Extrae el texto de una página respetando columnas, agrupando palabras en líneas."""
     palabras = pagina.extract_words(use_text_flow=False, keep_blank_chars=False)
     if not palabras:
         return ""
@@ -133,7 +114,6 @@ def extraer_texto_pagina(pagina) -> str:
     for grupo in grupos:
         linea_actual, top_actual = [], None
         for palabra in grupo:
-            # Palabras cuyo "top" difiere en menos de 3pt se consideran la misma línea.
             if top_actual is None or abs(palabra["top"] - top_actual) > 3:
                 if linea_actual:
                     lineas.append(" ".join(linea_actual))
@@ -147,12 +127,10 @@ def extraer_texto_pagina(pagina) -> str:
 
 
 def quitar_guiones_de_corte(texto: str) -> str:
-    """Recompone palabras separadas por guion de fin de línea: 'socio-\\ngía' -> 'sociología'."""
     return re.sub(r"(\w)-\n(\w)", r"\1\2", texto)
 
 
 def quitar_encabezados_repetidos(paginas_texto: list[str]) -> list[str]:
-    """Elimina líneas que se repiten en al menos la mitad de las páginas (encabezado/pie/DOI)."""
     if len(paginas_texto) < 3:
         return paginas_texto
 
@@ -172,36 +150,27 @@ def quitar_encabezados_repetidos(paginas_texto: list[str]) -> list[str]:
     ]
 
 
-# Detecta líneas que son SOLO un número de página ("12", "Página 12", "Page 12 / 30").
-# Se aplica aparte del filtro por repetición porque el número cambia en cada
-# hoja y por lo tanto nunca se repite lo suficiente para que el filtro anterior lo detecte.
 _PATRON_NUM_PAGINA = re.compile(r"^\s*(p[aá]gina|page)?\s*\d{1,4}\s*(/\s*\d{1,4})?\s*$", re.IGNORECASE)
 
 
 def quitar_numeros_de_pagina(paginas_texto: list[str]) -> list[str]:
-    """Elimina líneas que son solo un número/etiqueta de página, en cualquier página."""
     return [
         "\n".join(l for l in pagina.split("\n") if not _PATRON_NUM_PAGINA.match(l.strip()))
         for pagina in paginas_texto
     ]
 
 
-# Valores de metadata "genéricos" que dejan algunos exportadores de PDF cuando
-# el autor no completó el campo real (ej. Word/LibreOffice/reportlab por defecto).
 _TITULOS_GENERICOS = {"untitled", "unknown", "sin titulo", "sin título", "documento", "document", "pdf"}
 _AUTORES_GENERICOS = {"anonymous", "unknown", ""}
 
 
 def extraer_metadata(pdf, ruta_archivo: Path, texto_primera_pagina: str) -> tuple[str, str]:
-    """Título y autor: primero desde la metadata embebida del PDF; si no está o es genérica, heurística."""
     meta = pdf.metadata or {}
     titulo = (meta.get("Title") or "").strip()
     autor = (meta.get("Author") or "").strip()
 
     if not titulo or titulo.lower() in _TITULOS_GENERICOS:
         titulo = ""
-        # Heurística de respaldo: la primera línea de longitud razonable de la
-        # primera página suele ser el título, tanto en papers como en ensayos.
         for linea in texto_primera_pagina.split("\n"):
             if 10 < len(linea.strip()) < 200:
                 titulo = linea.strip()
@@ -219,34 +188,49 @@ def procesar_pdf(ruta_archivo: Path) -> DocumentoProcesado | None:
     logger.info("Procesando: %s", ruta_archivo.name)
 
     try:
-        with pdfplumber.open(ruta_archivo) as pdf:
-            paginas_texto = [extraer_texto_pagina(p) for p in pdf.pages]
-            texto_crudo = "\n".join(paginas_texto)
+        paginas_limpias = []
+        num_paginas = 0
 
-            if len(texto_crudo.strip()) < 200:
+        with pdfplumber.open(ruta_archivo) as pdf:
+            num_paginas = len(pdf.pages)
+
+            for i, pagina in enumerate(pdf.pages, start=1):
+                texto = extraer_texto_pagina(pagina)
+                if texto.strip():
+                    texto = quitar_numeros_de_pagina([texto])[0]
+                    paginas_limpias.append(texto)
+
+                if i % 30 == 0:
+                    gc.collect()
+
+            if len(paginas_limpias) < 3 or sum(len(p) for p in paginas_limpias) < 500:
                 logger.warning(
                     "%s tiene muy poco texto extraíble — probablemente es un PDF "
-                    "escaneado sin OCR. Se omite; pásalo por OCR antes de reintentar.",
+                    "escaneado sin OCR. Se omite.",
                     ruta_archivo.name,
                 )
                 return None
 
-            paginas_limpias = quitar_encabezados_repetidos(paginas_texto)
-            paginas_limpias = quitar_numeros_de_pagina(paginas_limpias)
-            texto_final = quitar_guiones_de_corte("\n".join(paginas_limpias))
+            paginas_limpias = quitar_encabezados_repetidos(paginas_limpias)
+            texto_final = "\n".join(paginas_limpias)
+            texto_final = quitar_guiones_de_corte(texto_final)
             texto_final = re.sub(r"\n{3,}", "\n\n", texto_final).strip()
 
-            titulo, autor = extraer_metadata(pdf, ruta_archivo, paginas_limpias[0])
+            titulo, autor = extraer_metadata(pdf, ruta_archivo, texto_final[:3000])
+
+            del paginas_limpias
+            gc.collect()
 
             return DocumentoProcesado(
                 doc_id=ruta_archivo.stem,
                 archivo_origen=ruta_archivo.name,
                 titulo=titulo,
                 autor=autor,
-                num_paginas=len(pdf.pages),
+                num_paginas=num_paginas,
                 texto=texto_final,
                 num_caracteres=len(texto_final),
             )
+
     except Exception:
         logger.exception("Falló el procesamiento de %s", ruta_archivo.name)
         return None
@@ -261,15 +245,22 @@ def main():
         return
 
     logger.info("Encontrados %d PDFs para procesar.", len(pdfs))
-    procesados = omitidos = 0
+    procesados = omitidos = saltados = 0
 
     for ruta in pdfs:
+        salida = DATA_PROCESSED_DIR / f"{ruta.stem}.json"
+
+        # ←←← LÓGICA DE SALTO AÑADIDA
+        if salida.exists():
+            logger.info("Saltando %s (ya procesado previamente)", ruta.name)
+            saltados += 1
+            continue
+
         doc = procesar_pdf(ruta)
         if doc is None:
             omitidos += 1
             continue
 
-        salida = DATA_PROCESSED_DIR / f"{doc.doc_id}.json"
         salida.write_text(json.dumps(asdict(doc), ensure_ascii=False, indent=2), encoding="utf-8")
         logger.info(
             "  -> %s | %d páginas | %d caracteres | título detectado: %s",
@@ -277,7 +268,7 @@ def main():
         )
         procesados += 1
 
-    logger.info("Listo. Procesados: %d | Omitidos: %d", procesados, omitidos)
+    logger.info("Listo. Procesados: %d | Saltados: %d | Omitidos: %d", procesados, saltados, omitidos)
 
 
 if __name__ == "__main__":

@@ -49,8 +49,9 @@ from retrieve import buscar, cargar_coleccion
 
 SYSTEM_INSTRUCTION = """\
 Eres un asistente de investigación que responde preguntas EXCLUSIVAMENTE a \
-partir del contexto entregado, extraído de papers de sociología y ciencias \
-sociales computacionales.
+partir del contexto entregado, extraído de documentos de política pública \
+(proyectos de ley, informes de comisión, debate legislativo y análisis \
+especializado).
 
 Reglas estrictas:
 1. Responde solo con información que esté explícitamente en el contexto. \
@@ -61,7 +62,11 @@ indexado.") en vez de inventar una respuesta.
 3. Cada afirmación debe ir acompañada de la referencia entre corchetes \
 correspondiente (ej. [1], [2]), usando los números de las fuentes \
 listadas en el contexto.
-4. Responde en español, de forma clara y directa, sin relleno innecesario.
+4. Si el contexto muestra posturas distintas o en disputa sobre el mismo \
+punto (ej. entre oficialismo y oposición, o entre versiones sucesivas de \
+un proyecto de ley), señala esa diversidad explícitamente en vez de \
+presentar una sola postura como si fuera consenso.
+5. Responde en español, de forma clara y directa, sin relleno innecesario.
 """
 
 
@@ -81,10 +86,7 @@ def generar_respuesta(
     pregunta: str, fragmentos: list[dict], cliente: genai.Client, intentos: int = 3, espera_inicial: float = 2.0
 ) -> str:
     """
-    Llama a Gemini, mostrando siempre el error real si algo falla — la
-    versión anterior de esta función ocultaba el motivo real detrás de un
-    mensaje genérico ("Gemini no respondió"), lo que hizo imposible
-    diagnosticar un problema real de cuota (ver más abajo).
+    Llama a Gemini, mostrando siempre el error real si algo falla.
 
     Se reintenta SOLO ante errores de servidor (ServerError, ej. 503 por
     alta demanda) — son los únicos genuinamente transitorios. Un error de
