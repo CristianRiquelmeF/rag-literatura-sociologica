@@ -1,31 +1,33 @@
-# SocioLit-RAG — Asistente conversacional sobre literatura documental
+# Política-RAG — Asistente conversacional para el análisis de políticas públicas
 
 Sistema de **Retrieval-Augmented Generation (RAG)** construido desde cero,
-sin frameworks de por medio, para consultar en lenguaje natural un corpus
-propio de documentos PDF — con cada afirmación citada a la fuente exacta de
-donde salió. Nunca responde "de memoria": si la información no está en el
-corpus indexado, lo dice explícitamente en vez de inventar.
+sin frameworks de por medio, para consultar en lenguaje natural el proceso legislativo y el debate en torno a una política pública específica — con cada afirmación citada a la fuente exacta de donde salió. Nunca responde "de memoria": si la información no está en el corpus indexado, lo dice explícitamente en vez de inventar.
 
-Se construyó sobre un corpus de papers de sociología y ciencias sociales
-computacionales, pero **la arquitectura es agnóstica al contenido** — ver
-[¿Para qué más sirve esto?](#para-qué-más-sirve-esto).
+**Corpus de demostración actual**: Marco normativo y literatura de evaluación de la Pensión Garantizada Universal (PGU) en Chile, incluyendo la Ley N° 21.419 de 2022, informes legislativos sobre la transición del Pilar Solidario y estudios de impacto socio-laboral. Pero, cabe señalar que **la arquitectura es agnóstica al contenido**, es decir, se puede modificar el contenido según la finalidad.
 
   ![Interfaz de usuario de SocioLit-RAG](assets/demo-interfaz.png)
 
 
-  ![Interfaz de usuario de SocioLit-RAG](assets/demo-interfaz2.png)
+      ![Interfaz de usuario de SocioLit-RAG](assets/demo-interfaz2.png)
   
 ## Motivación
-
-Este proyecto responde a una necesidad doble:
-
-1. **Uso práctico**: un asistente propio para consultar rápido la
-   literatura que se viene leyendo o acumulando, con trazabilidad
-   completa a la fuente.
+ 
+Seguir el debate legislativo sobre una política pública en profundidad es
+lento: requiere leer el proyecto de ley original, sus modificaciones,
+informes de comisión, y comentarios especializados de posturas distintas —
+todo disperso en decenas de documentos. Este proyecto responde a dos
+necesidades:
+ 
+1. **Utilidad práctica real**: un asistente que permite preguntar en
+   lenguaje natural qué dice o cómo evolucionó una política específica,
+   con cada afirmación trazable a su fuente exacta — útil para cualquiera
+   que necesite seguir un debate legislativo sin releer documento por
+   documento (periodistas, investigadores, ciudadanía informada).
 2. **Manejo demostrable de IA generativa aplicada**: LLMs vía API, prompt
    engineering orientado a evitar alucinaciones, arquitectura RAG y
-   evaluación automatizada — más allá del machine learning clásico y el
-   NLP con fine-tuning, que se cubren en otros proyectos del portafolio.
+   evaluación automatizada — aplicado a un dominio de interés general,
+   no solo académico.
+
 
 ## Por qué RAG y no "pegarle los PDFs a un chat"
 
@@ -92,7 +94,7 @@ para escalar está señalado en el propio código: `embed.py` reconstruye la
 colección completa en cada corrida (simple y seguro a esta escala); un
 corpus mucho más grande cambiaría eso por una actualización incremental.
 
-## Decisiones de diseño (para poder defenderlas en una entrevista)
+## Decisiones de diseño
 
 - **Embeddings locales (E5 multilingüe) en vez de una API de embeddings**:
   no depende de un servicio externo, no tiene costo por documento
